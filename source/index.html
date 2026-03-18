@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>StealthVault</title>
+        <rel stylesheet src="styles.css"></rel>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    </head>
+    
+    <body>
+        <div id="toast-shelf"></div>
+
+        <div class="shell">
+            <div class="header">
+                <div class="wordmark">Stealth<span>Vault</span></div>
+                <div class="build-tag">ASV1.0</div>
+            </div>
+
+            <!-- MODE TOGGLE -->
+            <div class="mode-row">
+                <button class="mode-btn active" id="mEnc" onclick="switchMode('encrypt')">Encrypt</button>
+                <button class="mode-btn" id="mDec" onclick="switchMode('decrypt')">Decrypt</button>
+            </div>
+
+            <!-- ENCRYPT -->
+            <div id="encrypt" class="section active">
+                <div class="field">
+                    <div class="field-label">Source file</div>
+                    <div class="drop-zone" id="dzEnc">
+                        <input type="file" id="fileIn" onchange="onFileIn(this)">
+                        <div class="drop-zone-inner">
+                            <div class="drop-glyph">⊞</div>
+                            <div>
+                                <div class="drop-text-main">Select or drop file</div>
+                                <div class="drop-text-sub">Any format</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-indicator" id="fiEnc">
+                        <div class="fi-dot"></div>
+                        <div class="fi-name" id="fiEncName"></div>
+                        <div class="fi-size" id="fiEncSize"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">Access key to decrypt</div>
+                    <div class="key-wrap">
+                        <input type="text" class="key-input" id="passIn" readonly placeholder="— select a file to generate —">
+                        <button class="key-copy-btn" onclick="copyKey()" title="Copy key">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rule"></div>
+
+                <button id="btnEnc" class="action-btn" onclick="encodeFile()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Encrypt
+                </button>
+
+                <div id="stEnc" class="status-line" style="visibility:hidden">ready</div>
+            </div>
+
+            <!-- DECRYPT -->
+            <div id="decrypt" class="section">
+                <div class="field">
+                    <div class="field-label">Vault file</div>
+                    <div class="drop-zone" id="dzDec">
+                        <input type="file" id="fileOut" accept=".asvault" onchange="onFileDec(this)">
+                        <div class="drop-zone-inner">
+                            <div class="drop-glyph">⊟</div>
+                            <div>
+                                <div class="drop-text-main">Select vault file</div>
+                                <div class="drop-text-sub">.asvault files only</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-indicator" id="fiDec">
+                        <div class="fi-dot"></div>
+                        <div class="fi-name" id="fiDecName"></div>
+                        <div class="fi-size" id="fiDecSize"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">Access key</div>
+                    <div class="key-wrap">
+                        <input type="text" class="key-input" id="passOut" placeholder="Insert the key here...">
+                    </div>
+                </div>
+
+                <div class="rule"></div>
+
+                <div class="btn-row">
+                    <button id="btnDecView" class="action-btn" onclick="decodeFile('view')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View
+                    </button>
+                    <button id="btnDecSave" class="action-btn" onclick="decodeFile('save')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Save
+                    </button>
+                </div>
+
+                <div id="stDec" class="status-line" style="visibility:hidden">ready</div>
+            </div>
+        </div>
+
+        <!-- PREVIEW MODAL -->
+        <div class="preview-modal" id="previewModal" onclick="handleModalClick(event)">
+            <div class="preview-dialog">
+                <div class="preview-toolbar">
+                    <span class="preview-toolbar-label">Preview</span>
+                    <span class="preview-toolbar-name" id="previewName"></span>
+                    <button class="preview-toolbar-close" onclick="closePreview()">[ close ]</button>
+                </div>
+                <div class="preview-content" id="previewBody"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-note">LOCAL PROCESSING</div>
+            <div class="footer-algo">with AES-256-GCM Technology</div>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
