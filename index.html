@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>StealthVault</title>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            :root {
+                --bg: #1A1916;
+                --bg2: #211F1C;
+                --panel: #252320;
+                --panel2: #2C2A27;
+                --border: #3A3732;
+                --border2: #4A4844;
+                --text: #E8E4DC;
+                --text2: #9A958C;
+                --text3: #625E58;
+                --amber: #C8922A;
+                --amber-dim: #6B4E17;
+                --green: #5A9E6F;
+                --red: #B55252;
+            }
+
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: 'IBM Plex Mono', sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+            }
+
+            .shell {
+                width: 100%;
+                max-width: 420px;
+            }
+
+            .header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                margin-bottom: 20px;
+                padding-bottom: 14px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .wordmark {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 15px;
+                font-weight: 600;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--text);
+            }
+
+            .wordmark span {
+                color: var(--amber);
+            }
+
+            .build-tag {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 12px;
+                color: var(--text3);
+                letter-spacing: 0.06em;
+            }
+
+            .mode-row {
+                display: flex;
+                margin-bottom: 20px;
+                border: 1px solid var(--border);
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .mode-btn {
+                flex: 1;
+                padding: 10px 0;
+                background: none;
+                border: none;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--text3);
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+                position: relative;
+            }
+
+            .mode-btn + .mode-btn {
+                border-left: 1px solid var(--border);
+            }
+
+            .mode-btn.active {
+                background: var(--panel2);
+                color: var(--amber);
+            }
+
+            .mode-btn:not(.active):hover {
+                background: var(--panel);
+                color: var(--text2);
+            }
+
+            .section {
+                display: none;
+                flex-direction: column;
+                gap: 14px;
+                animation: appear 0.18s ease;
+            }
+
+            .section.active {
+                display: flex;
+            }
+
+            @keyframes appear {
+                from {
+                    opacity: 0;
+                    transform: translateY(4px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform:
+                    translateY(0);
+                }
+            }
+
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .field-label {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                font-weight: 500;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--text3);
+            }
+
+            .drop-zone {
+                position: relative;
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                border-radius: 3px;
+                padding: 20px 16px;
+                text-align: center;
+                cursor: pointer;
+                transition: border-color 0.15s, background 0.15s;
+            }
+
+            .drop-zone:hover, 
+            .drop-zone.over {
+                border-color: var(--border2);
+                background: var(--panel);
+            }
+
+            .drop-zone input[type="file"] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+            }
+
+            .drop-zone-inner {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .drop-glyph {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 20px;
+                color: var(--border2);
+                line-height: 1;
+                flex-shrink: 0;
+            }
+
+            .drop-text-main {
+                font-size: 15px;
+                font-weight: 600;
+                color: var(--text2);
+                text-align: left;
+            }
+
+            .drop-text-sub {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 14px;
+                color: var(--text3);
+                text-align: left;
+                margin-top: 1px;
+            }
+
+            .file-indicator {
+                display: none;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 10px;
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                border-top: none;
+                border-radius: 0 0 3px 3px;
+            }
+
+            .file-indicator.show {
+                display: flex;
+            }
+
+            .fi-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--amber);
+                flex-shrink: 0;
+            }
+
+            .fi-name {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 12px;
+                color: var(--text);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1;
+            }
+
+            .fi-size {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                color: var(--text3);
+                flex-shrink: 0;
+            }
+
+            .key-wrap {
+                position: relative;
+            }
+
+            .key-input {
+                width: 100%;
+                background: var(--bg2);
+                border: 1px solid var(--border);
+                border-radius: 3px;
+                padding: 12px 44px 12px 12px;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text);
+                letter-spacing: 0.06em;
+                transition: border-color 0.15s;
+                outline: none;
+            }
+
+            .key-input:focus {
+                border-color: var(--border2);
+            }
+
+            .key-input::placeholder {
+                color: var(--text3);
+                font-weight: 400;
+                letter-spacing: 0.02em;
+            }
+
+            .key-input[readonly] {
+                color: var(--amber);
+                background: var(--panel);
+                cursor: default;
+            }
+
+            .key-copy-btn {
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 38px;
+                background: none;
+                border: none;
+                border-left: 1px solid var(--border);
+                cursor: pointer;
+                color: var(--text3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.15s, background 0.15s;
+                border-radius: 0 3px 3px 0;
+            }
+
+            .key-copy-btn:hover {
+                color: var(--text);
+                background: var(--panel2);
+            }
+
+            .key-copy-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .rule {
+                height: 1px;
+                background: var(--border);
+            }
+
+            .action-btn {
+                width: 100%;
+                padding: 10px;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 3px;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 13px;
+                font-weight: 600;
+                letter-spacing: 0.2em;
+                text-transform: uppercase;
+                color: var(--text);
+                cursor: pointer;
+                transition: background 0.15s, border-color 0.15s, color 0.15s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 2px;
+            }
+
+            .action-btn svg {
+                width: 15px;
+                height: 15px;
+                flex-shrink: 0;
+            }
+
+            .action-btn:hover {
+                background: var(--amber-dim);
+                border-color: var(--amber);
+                color: var(--amber);
+            }
+
+            .action-btn:active {
+                opacity: 0.8;
+                transform: scale(0.99);
+            }
+
+            .action-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            .status-line {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 12px;
+                color: var(--text3);
+                min-height: 16px;
+                letter-spacing: 0.04em;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .status-line.ok {
+                color: var(--green);
+            }
+
+            .status-line.err {
+                color: var(--red);
+            }
+
+            .status-line::before {
+                content: '▸';
+                flex-shrink: 0;
+            }
+
+            .footer {
+                margin-top: 18px;
+                padding-top: 12px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                max-width: 420px
+            }
+
+            .footer-note {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                color: var(--text3);
+                letter-spacing: 0.06em;
+            }
+
+            .footer-algo {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                color: var(--amber-dim);
+                letter-spacing: 0.08em;
+            }
+
+            .btn-row {
+                display: flex;
+                gap: 8px;
+            }
+
+            .btn-row .action-btn {
+                flex: 1;
+            }
+
+            .preview-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 999;
+                background: rgba(0,0,0,0.75);
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+                animation: fadeIn 0.18s ease;
+            }
+
+            .preview-modal.show {
+                display: flex;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .preview-dialog {
+                background: var(--panel);
+                border: 1px solid var(--border2);
+                border-radius: 4px;
+                width: 100%;
+                max-width: 680px;
+                max-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                animation: slideUp 0.2s ease;
+            }
+
+            @keyframes slideUp {
+                from {
+                    transform: translateY(12px);
+                    opacity: 0;
+                }
+
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            .preview-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 12px;
+                background: var(--panel2);
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+
+            .preview-toolbar-label {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+                color: var(--text3);
+            }
+
+            .preview-toolbar-name {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 12px;
+                color: var(--amber);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                flex: 1;
+            }
+
+            .preview-toolbar-close {
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: 2px;
+                cursor: pointer;
+                color: var(--text3);
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                padding: 4px 10px;
+                transition: color 0.15s, border-color 0.15s, background 0.15s;
+                flex-shrink: 0;
+            }
+
+            .preview-toolbar-close:hover {
+                color: var(--text);
+                border-color: var(--border2);
+                background: var(--panel);
+            }
+
+            .preview-content {
+                flex: 1;
+                overflow: auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg2);
+                padding: 20px;
+                min-height: 180px;
+            }
+
+            .preview-content img,
+            .preview-content video {
+                max-width: 100%;
+                max-height: 65vh;
+                display: block;
+                border-radius: 2px;
+            }
+
+            .preview-content audio {
+                width: 100%;
+                max-width: 480px;
+            }
+
+            .preview-unsupported {
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 12px;
+                color: var(--text3);
+                text-align: center;
+                letter-spacing: 0.06em;
+            }
+
+            #toast-shelf {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                z-index: 999;
+                pointer-events: none;
+            }
+
+            .toast {
+                background: var(--panel2);
+                border: 1px solid var(--border2);
+                border-radius: 3px;
+                padding: 9px 16px;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 11px;
+                color: var(--text2);
+                letter-spacing: 0.04em;
+                white-space: nowrap;
+                opacity: 0;
+                transform: translateY(8px);
+                transition: opacity 0.2s, transform 0.2s;
+            }
+
+            .toast.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .toast.ok {
+                border-color: var(--green);
+                color: var(--green);
+            }
+
+            .toast.err {
+                border-color: var(--red);
+                color: var(--red);
+            }
+
+            .toast.warn {
+                border-color: var(--amber-dim);
+                color: var(--amber);
+            }
+        </style>
+    </head>
+    
+    <body>
+        <div id="toast-shelf"></div>
+
+        <div class="shell">
+            <div class="header">
+                <div class="wordmark">Stealth<span>Vault</span></div>
+                <div class="build-tag">ASV1.0</div>
+            </div>
+
+            <!-- MODE TOGGLE -->
+            <div class="mode-row">
+                <button class="mode-btn active" id="mEnc" onclick="switchMode('encrypt')">Encrypt</button>
+                <button class="mode-btn" id="mDec" onclick="switchMode('decrypt')">Decrypt</button>
+            </div>
+
+            <!-- ENCRYPT -->
+            <div id="encrypt" class="section active">
+                <div class="field">
+                    <div class="field-label">Source file</div>
+                    <div class="drop-zone" id="dzEnc">
+                        <input type="file" id="fileIn" onchange="onFileIn(this)">
+                        <div class="drop-zone-inner">
+                            <div class="drop-glyph">⊞</div>
+                            <div>
+                                <div class="drop-text-main">Select or drop file</div>
+                                <div class="drop-text-sub">Any format</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-indicator" id="fiEnc">
+                        <div class="fi-dot"></div>
+                        <div class="fi-name" id="fiEncName"></div>
+                        <div class="fi-size" id="fiEncSize"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">Access key to decrypt</div>
+                    <div class="key-wrap">
+                        <input type="text" class="key-input" id="passIn" readonly placeholder="— select a file to generate —">
+                        <button class="key-copy-btn" onclick="copyKey()" title="Copy key">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="rule"></div>
+
+                <button id="btnEnc" class="action-btn" onclick="encodeFile()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Encrypt
+                </button>
+
+                <div id="stEnc" class="status-line" style="visibility:hidden">ready</div>
+            </div>
+
+            <!-- DECRYPT -->
+            <div id="decrypt" class="section">
+                <div class="field">
+                    <div class="field-label">Vault file</div>
+                    <div class="drop-zone" id="dzDec">
+                        <input type="file" id="fileOut" accept=".asvault" onchange="onFileDec(this)">
+                        <div class="drop-zone-inner">
+                            <div class="drop-glyph">⊟</div>
+                            <div>
+                                <div class="drop-text-main">Select vault file</div>
+                                <div class="drop-text-sub">.asvault files only</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-indicator" id="fiDec">
+                        <div class="fi-dot"></div>
+                        <div class="fi-name" id="fiDecName"></div>
+                        <div class="fi-size" id="fiDecSize"></div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label">Access key</div>
+                    <div class="key-wrap">
+                        <input type="text" class="key-input" id="passOut" placeholder="Insert the key here...">
+                    </div>
+                </div>
+
+                <div class="rule"></div>
+
+                <div class="btn-row">
+                    <button id="btnDecView" class="action-btn" onclick="decodeFile('view')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        View
+                    </button>
+                    <button id="btnDecSave" class="action-btn" onclick="decodeFile('save')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Save
+                    </button>
+                </div>
+
+                <div id="stDec" class="status-line" style="visibility:hidden">ready</div>
+            </div>
+        </div>
+
+        <!-- PREVIEW MODAL -->
+        <div class="preview-modal" id="previewModal" onclick="handleModalClick(event)">
+            <div class="preview-dialog">
+                <div class="preview-toolbar">
+                    <span class="preview-toolbar-label">Preview</span>
+                    <span class="preview-toolbar-name" id="previewName"></span>
+                    <button class="preview-toolbar-close" onclick="closePreview()">[ close ]</button>
+                </div>
+                <div class="preview-content" id="previewBody"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-note">LOCAL PROCESSING</div>
+            <div class="footer-algo">with AES-256-GCM Technology</div>
+        </div>
+
+        <script>
+            function switchMode(m) {
+                const enc = m === 'encrypt';
+                document.getElementById('mEnc').classList.toggle('active', enc);
+                document.getElementById('mDec').classList.toggle('active', !enc);
+                document.getElementById('encrypt').classList.toggle('active', enc);
+                document.getElementById('decrypt').classList.toggle('active', !enc);
+            }
+
+            function onFileIn(input) {
+                const f = input.files[0]; if (!f) return;
+                showFileIndicator('fiEnc', f);
+                generateKey();
+            }
+
+            function onFileDec(input) {
+                const f = input.files[0]; if (!f) return;
+                showFileIndicator('fiDec', f);
+            }
+
+            function showFileIndicator(id, f) {
+                document.getElementById(id + 'Name').textContent = f.name;
+                document.getElementById(id + 'Size').textContent = fmt(f.size);
+                document.getElementById(id).classList.add('show');
+            }
+
+            function fmt(b) {
+                if (b < 1024) return b + 'B';
+                if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
+                return (b / 1048576).toFixed(1) + 'MB';
+            }
+
+            function generateKey() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                let key = '';
+                const arr = crypto.getRandomValues(new Uint8Array(16));
+                arr.forEach(b => key += chars[b % chars.length]);
+                document.getElementById('passIn').value = key;
+            }
+
+            function copyKey() {
+                const val = document.getElementById('passIn').value;
+                if (!val || val === '') return;
+                navigator.clipboard.writeText(val).then(() => toast('Key copied to clipboard', 'ok'));
+            }
+
+            function setStatus(id, msg, type) {
+                const el = document.getElementById(id);
+                el.textContent = msg;
+                el.className = 'status-line ' + (type || '');
+                el.style.visibility = 'visible';
+            }
+
+            function toast(msg, type = '') {
+                const shelf = document.getElementById('toast-shelf');
+                const t = document.createElement('div');
+                t.className = 'toast ' + type;
+                t.textContent = msg;
+                shelf.appendChild(t);
+                requestAnimationFrame(() => t.classList.add('show'));
+                setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 250); }, 3000);
+            }
+
+            async function getKeyMaterial(pw) {
+                return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), { name: 'PBKDF2' }, false, ['deriveKey']);
+            }
+
+            async function getKey(km, salt) {
+                return crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                    km, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+                );
+            }
+
+            async function generateHashName(fn) {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fn));
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+            }
+
+            function packData(filename, fileBuffer) {
+                const nb = new TextEncoder().encode(filename), fb = new Uint8Array(fileBuffer);
+                const out = new Uint8Array(2 + nb.length + fb.length);
+                out[0] = (nb.length >> 8) & 0xFF; out[1] = nb.length & 0xFF;
+                out.set(nb, 2); out.set(fb, 2 + nb.length);
+                return out.buffer;
+            }
+
+            function unpackData(buf) {
+                const a = new Uint8Array(buf), nl = (a[0] << 8) | a[1];
+                return { filename: new TextDecoder().decode(a.slice(2, 2 + nl)), fileBuffer: a.slice(2 + nl).buffer };
+            }
+
+            function downloadFile(blob, filename) {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = filename;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(a.href), 100);
+            }
+
+            async function encodeFile() {
+                const fi = document.getElementById('fileIn'), pw = document.getElementById('passIn').value;
+                const btn = document.getElementById('btnEnc');
+                if (!fi.files.length) return toast('No source file selected.', 'warn');
+                if (!pw) return toast('Generate a key first.', 'warn');
+                const file = fi.files[0];
+                btn.disabled = true; btn.textContent = 'Processing…';
+                setStatus('stEnc', 'encrypting…');
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const salt = crypto.getRandomValues(new Uint8Array(16));
+                        const iv   = crypto.getRandomValues(new Uint8Array(12));
+                        const km   = await getKeyMaterial(pw);
+                        const key  = await getKey(km, salt);
+                        const enc  = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, packData(file.name, e.target.result));
+                        const encB = new Uint8Array(enc);
+                        const out  = new Uint8Array(28 + encB.length);
+                        out.set(salt, 0); out.set(iv, 16); out.set(encB, 28);
+                        const hash = await generateHashName(file.name);
+                        downloadFile(new Blob([out], { type: 'application/octet-stream' }), hash + '.asvault');
+                        try {
+                            await navigator.clipboard.writeText(pw);
+                            toast('Encrypted · key copied to clipboard', 'ok');
+                        } catch {
+                            toast('File encrypted and saved.', 'ok');
+                        }
+                        setStatus('stEnc', `output → ${hash}.asvault`, 'ok');
+                    } catch {
+                        setStatus('stEnc', 'encryption failed', 'err');
+                        toast('Encryption error.', 'err');
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Proceed`;
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            async function decodeFile(mode) {
+                const fi = document.getElementById('fileOut'), pw = document.getElementById('passOut').value.trim();
+                const btnV = document.getElementById('btnDecView'), btnS = document.getElementById('btnDecSave');
+                if (!fi.files.length) return toast('No vault file selected.', 'warn');
+                if (!pw) return toast('Access key required.', 'warn');
+                const file = fi.files[0];
+                if (!file.name.toLowerCase().endsWith('.asvault')) {
+                    return toast('Invalid format — only .asvault files accepted.', 'err');
+                }
+                btnV.disabled = true; btnS.disabled = true;
+                btnV.textContent = 'Working…'; btnS.textContent = 'Working…';
+                setStatus('stDec', 'decrypting…');
+                closePreview();
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const arr  = new Uint8Array(e.target.result);
+                        if (arr.length < 28) throw new Error('invalid');
+                        const salt = arr.slice(0, 16), iv = arr.slice(16, 28), enc = arr.slice(28);
+                        const km   = await getKeyMaterial(pw);
+                        const key  = await getKey(km, salt);
+                        const dec  = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, enc.buffer);
+                        const { filename, fileBuffer } = unpackData(dec);
+                        const blob = new Blob([fileBuffer]);
+
+                        if (mode === 'save') {
+                            downloadFile(blob, filename);
+                            setStatus('stDec', `saved → ${filename}`, 'ok');
+                            toast('File restored and saved.', 'ok');
+                        } else {
+                            const shown = showPreview(blob, filename);
+                            if (!shown) {
+                                downloadFile(blob, filename);
+                                setStatus('stDec', `no preview — saved → ${filename}`, 'ok');
+                                toast('No preview for this format · file saved.', 'warn');
+                            } else {
+                                setStatus('stDec', `viewing → ${filename}`, 'ok');
+                                toast('File decrypted.', 'ok');
+                            }
+                        }
+                    } catch {
+                        setStatus('stDec', 'wrong key or corrupted file', 'err');
+                        toast('Decryption failed.', 'err');
+                    } finally {
+                        btnV.disabled = false; btnS.disabled = false;
+                        btnV.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>View`;
+                        btnS.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Save`;
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            const IMGS  = ['jpg','jpeg','png','gif','webp','bmp','svg','avif'];
+            const VIDS  = ['mp4','webm','ogg','mov'];
+            const AUDS  = ['mp3','wav','ogg','flac','m4a','aac'];
+
+            function showPreview(blob, filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const url = URL.createObjectURL(blob);
+                const body = document.getElementById('previewBody');
+                const modal = document.getElementById('previewModal');
+                document.getElementById('previewName').textContent = filename;
+                body.innerHTML = '';
+
+                let el;
+                if (IMGS.includes(ext)) {
+                    el = document.createElement('img');
+                    el.src = url; el.alt = filename;
+                } else if (VIDS.includes(ext)) {
+                    el = document.createElement('video');
+                    el.src = url; el.controls = true;
+                } else if (AUDS.includes(ext)) {
+                    el = document.createElement('audio');
+                    el.src = url; el.controls = true;
+                } else {
+                    body.innerHTML = `<div class="preview-unsupported">no preview available for .${ext || '?'}</div>`;
+                    modal.classList.add('show');
+                    return false;
+                }
+
+                body.appendChild(el);
+                modal.classList.add('show');
+                return true;
+            }
+
+            function closePreview() {
+                const modal = document.getElementById('previewModal');
+                modal.classList.remove('show');
+                document.getElementById('previewBody').innerHTML = '';
+                document.getElementById('previewName').textContent = '';
+            }
+
+            function handleModalClick(e) {
+                if (e.target === document.getElementById('previewModal')) closePreview();
+            }
+
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closePreview(); });
+
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('over'); });
+                z.addEventListener('dragleave', () => z.classList.remove('over'));
+                z.addEventListener('drop', () => z.classList.remove('over'));
+            });
+        </script>
+    </body>
+</html>
